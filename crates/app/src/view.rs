@@ -1,6 +1,6 @@
 //! Root view (port of `App.tsx`): header, filter bar and repository groups.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::time::Instant;
 
 use gpui::{
@@ -14,7 +14,7 @@ use pr_dashboard_core::providers::common::Provider;
 
 use crate::repo_group::Row;
 use crate::settings::{SettingsEvent, SettingsView};
-use crate::state::{Dashboard, MergeFailed};
+use crate::state::Dashboard;
 use crate::theme::{Theme, ThemeMode};
 use crate::toasts::Toast;
 use crate::updater::Updater;
@@ -29,8 +29,6 @@ pub struct AppView {
     pub(crate) collapsed: HashSet<String>,
     /// "<repo id>-<pr number>" of the card whose branch was just copied.
     pub(crate) copied: Option<String>,
-    /// Merge button state per card ("<repo id>-<pr number>"); absent = idle.
-    pub(crate) merge_ui: HashMap<String, MergeUi>,
     /// Flattened rows of the virtualized list (see `repo_group.rs`).
     pub(crate) rows: Vec<Row>,
     pub(crate) list_state: ListState,
@@ -47,15 +45,6 @@ pub struct AppView {
     pub(crate) toasts: Vec<Toast>,
     pub(crate) next_toast_id: u64,
     _subscriptions: Vec<Subscription>,
-}
-
-/// State of a card's merge button.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum MergeUi {
-    /// First click done: the next click merges.
-    Confirming,
-    /// Request in flight.
-    Merging,
 }
 
 /// What "Test" in Settings raises, as in the React app.
@@ -100,10 +89,6 @@ impl AppView {
             cx.subscribe(&dashboard, |this, _, event: &PrEvent, cx| {
                 this.add_toast(event.clone(), cx);
             }),
-            cx.subscribe(&dashboard, |this, _, failed: &MergeFailed, cx| {
-                this.merge_ui.remove(&format!("{}-{}", failed.repo_id, failed.event.pr_number));
-                this.add_error_toast(failed.event.clone(), failed.error.clone(), cx);
-            }),
         ];
 
         AppView {
@@ -113,7 +98,6 @@ impl AppView {
             filter: FilterStatus::All,
             collapsed: HashSet::new(),
             copied: None,
-            merge_ui: HashMap::new(),
             rows: Vec::new(),
             // `measure_all`: without it the list only knows the height of the rows
             // it has drawn, and the scrollbar thumb jumps while scrolling with
