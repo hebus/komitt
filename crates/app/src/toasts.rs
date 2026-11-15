@@ -17,8 +17,6 @@ pub(crate) const TOAST_DURATION: Duration = Duration::from_millis(5000);
 pub(crate) struct Toast {
     pub id: u64,
     pub event: PrEvent,
-    /// Set for a failed action (e.g. merge): shown with the PR line.
-    pub error: Option<String>,
 }
 
 /// "New PR" / "MR merged".
@@ -37,18 +35,9 @@ pub(crate) fn event_line(e: &PrEvent) -> String {
 
 impl AppView {
     pub(crate) fn add_toast(&mut self, event: PrEvent, cx: &mut Context<Self>) {
-        self.push_toast(event, None, cx);
-    }
-
-    /// A failed merge: the toast shows the provider's message.
-    pub(crate) fn add_error_toast(&mut self, event: PrEvent, error: String, cx: &mut Context<Self>) {
-        self.push_toast(event, Some(error), cx);
-    }
-
-    fn push_toast(&mut self, event: PrEvent, error: Option<String>, cx: &mut Context<Self>) {
         let id = self.next_toast_id;
         self.next_toast_id += 1;
-        self.toasts.push(Toast { id, event, error });
+        self.toasts.push(Toast { id, event });
         cx.notify();
 
         cx.spawn(async move |this, cx| {
@@ -68,14 +57,7 @@ impl AppView {
         let items = self.toasts.iter().map(|toast| {
             let id = toast.id;
             let is_new = toast.event.kind == EventKind::NewPr;
-            let failed = toast.error.is_some();
-            let accent = if failed {
-                t.red
-            } else if is_new {
-                t.accent
-            } else {
-                t.green
-            };
+            let accent = if is_new { t.accent } else { t.green };
             let url = toast.event.url.clone();
 
             div()
@@ -101,13 +83,7 @@ impl AppView {
                         .items_start()
                         .gap_2p5()
                         .child(div().mt_0p5().child(icon(
-                            if failed {
-                                "icons/x.svg"
-                            } else if is_new {
-                                "icons/git-pull-request.svg"
-                            } else {
-                                "icons/git-merge.svg"
-                            },
+                            if is_new { "icons/git-pull-request.svg" } else { "icons/git-merge.svg" },
                             14.,
                             accent,
                         )))
@@ -121,11 +97,7 @@ impl AppView {
                                     div()
                                         .text_xs()
                                         .font_weight(FontWeight::SEMIBOLD)
-                                        .child(if failed {
-                                            format!("{} merge failed", pr_term(toast.event.provider))
-                                        } else {
-                                            event_title(&toast.event)
-                                        })
+                                        .child(event_title(&toast.event))
                                         .child(
                                             div()
                                                 .font_weight(FontWeight::NORMAL)
@@ -138,11 +110,8 @@ impl AppView {
                                         .mt_0p5()
                                         .text_xs()
                                         .text_color(t.text_muted)
-                                        .when(!failed, |e| e.truncate())
-                                        .child(match &toast.error {
-                                            Some(err) => format!("{} - {err}", event_line(&toast.event)),
-                                            None => event_line(&toast.event),
-                                        }),
+                                        .truncate()
+                                        .child(event_line(&toast.event)),
                                 ),
                         )
                         .child(

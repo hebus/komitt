@@ -278,7 +278,7 @@ impl SettingsView {
                 "GitLab",
                 "icons/gitlab.svg",
                 "URL de votre instance GitLab.",
-                "api",
+                "read_api",
                 "/-/user_settings/personal_access_tokens",
             ),
             Provider::Github => (
