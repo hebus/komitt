@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.13](https://github.com/hebus/pr-dashboard/compare/v0.1.12...v0.1.13) (2026-11-15)
+
+
+### Bug Fixes
+
+* **card:** revert merge PR/MR button ([b9cf582](https://github.com/hebus/pr-dashboard/commit/b9cf58269fe4666f8d7889a973233d73c88133ab))
+
 ## [0.1.12](https://github.com/hebus/pr-dashboard/compare/v0.1.11...v0.1.12) (2026-11-13)
 
 
