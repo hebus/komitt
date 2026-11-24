@@ -30,7 +30,7 @@ scripts/make_latest_json.py   builds the update manifest in CI
 | `state.rs` | `Dashboard` model: config, per-repository data, notification history. One polling loop per repository (GPUI task + timer). Network calls run on a tokio runtime and are awaited from GPUI. Emits `PrEvent` for new / merged PRs. |
 | `view.rs` | Root view: header, update banner, filter bar, list, overlays. |
 | `repo_group.rs` | Flattens repositories into `Row`s for a **virtualized** `gpui::list` (only visible rows are built; rendering every card made scrolling crawl). `rows_dirty` marks when to rebuild. **The list is created with `measure_all()`**: an unmeasured row counts as 0 px, so by default the list only knows the height of what it has drawn, and the scrollbar thumb jumps while scrolling with the wheel (dragging it looks fine because GPUI freezes the height during a drag). `measure_all` only measures again after a `reset`, so a rebuild does `reset` then `scroll_to` the previous item to keep the position, and does nothing at all when the rows are unchanged (polling refreshes), to avoid re-measuring every row each time. |
-| `pr_card.rs`, `filter_bar.rs` | Card and filter bar. |
+| `pr_card.rs`, `filter_bar.rs` | Card and filter bar. The card has two copy buttons (branch name, PR/MR URL next to the title); both share `AppView.copied` for the check-mark feedback. |
 | `settings.rs` | Settings modal: edits a local copy, applied on Save. |
 | `notification_panel.rs`, `toasts.rs` | Notification history dropdown and transient toasts. |
 | `updater.rs`, `update_banner.rs` | Self-update (below). |

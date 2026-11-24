@@ -111,6 +111,48 @@ impl AppView {
                 .detach();
             }));
 
+        let url_key = format!("url-{key}");
+        let url_copied = self.copied.as_deref() == Some(url_key.as_str());
+        let url_to_copy = pr.url.clone();
+        let copy_url_button = div()
+            .id(SharedString::from(format!("copy-url-{key}")))
+            .flex_none()
+            .flex()
+            .items_center()
+            .rounded_sm()
+            .px_1()
+            .py_0p5()
+            .cursor_pointer()
+            .hover(move |s| s.bg(t.bg_inset))
+            .child(if url_copied {
+                div().child(icon("icons/check.svg", 12., t.green)).into_any_element()
+            } else {
+                div()
+                    .opacity(0.)
+                    .group_hover("pr-card", |s| s.opacity(0.6))
+                    .child(icon("icons/copy.svg", 12., t.text_muted))
+                    .into_any_element()
+            })
+            .on_click(cx.listener(move |this, _, _, cx| {
+                // Do not also open the PR: the whole card is clickable.
+                cx.stop_propagation();
+                cx.write_to_clipboard(ClipboardItem::new_string(url_to_copy.clone()));
+                this.copied = Some(url_key.clone());
+                cx.notify();
+
+                let expected = url_key.clone();
+                cx.spawn(async move |this, cx| {
+                    cx.background_executor().timer(COPIED_FEEDBACK).await;
+                    let _ = this.update(cx, |this, cx| {
+                        if this.copied.as_deref() == Some(expected.as_str()) {
+                            this.copied = None;
+                            cx.notify();
+                        }
+                    });
+                })
+                .detach();
+            }));
+
         let title_row = div()
             .flex()
             .items_center()
@@ -131,7 +173,8 @@ impl AppView {
                     .group_hover("pr-card", move |s| s.text_color(t.accent))
                     .truncate()
                     .child(pr.title.clone()),
-            );
+            )
+            .child(copy_url_button);
 
         let meta_row = div()
             .flex()
