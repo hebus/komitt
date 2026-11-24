@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.14](https://github.com/hebus/komitt/compare/v0.1.13...v0.1.14) (2026-11-24)
+
+
+### Features
+
+* **card:** add copy URL button next to the title ([1d2374c](https://github.com/hebus/komitt/commit/1d2374c3f7a6a955324b4de060eb5512de221ecb))
+* **card:** add copy URL button next to the title ([5564d2a](https://github.com/hebus/komitt/commit/5564d2ac5d125409c25193dc42707859c0944676))
+
 ## [0.1.13](https://github.com/hebus/pr-dashboard/compare/v0.1.12...v0.1.13) (2026-11-15)
 
 
