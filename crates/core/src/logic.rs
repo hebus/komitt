@@ -46,6 +46,13 @@ pub fn pr_prefix(provider: Provider) -> &'static str {
     }
 }
 
+/// An "upmerge" PR/MR propagates a maintenance branch into a newer one to
+/// resolve conflicts. Detected from the source branch name or the title.
+pub fn is_upmerge(pr: &PullRequest) -> bool {
+    let has = |s: &str| s.to_ascii_lowercase().replace(['-', '_', ' '], "").contains("upmerge");
+    has(&pr.head_ref_name) || has(&pr.title)
+}
+
 /// Short random id (7 base-36 characters) for new repository entries, like the
 /// React app's `generateId`. Only needs to be unique within one config.
 pub fn generate_id() -> String {
@@ -406,6 +413,17 @@ mod tests {
             requested_reviewers: vec![],
             approvers: vec![],
         }
+    }
+
+    #[test]
+    fn detects_upmerge() {
+        let mut p = pr(1, None);
+        assert!(!is_upmerge(&p));
+        p.head_ref_name = "upmerge/release-1.2-into-develop".into();
+        assert!(is_upmerge(&p));
+        p.head_ref_name = "f".into();
+        p.title = "Up-merge release/1.2".into();
+        assert!(is_upmerge(&p));
     }
 
     #[test]
