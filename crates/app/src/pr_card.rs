@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use gpui::{div, prelude::*, px, ClipboardItem, Context, FontWeight, IntoElement, SharedString};
-use pr_dashboard_core::logic::{pr_prefix, time_ago};
+use pr_dashboard_core::logic::{is_upmerge, pr_prefix, time_ago};
 use pr_dashboard_core::providers::common::{Provider, PullRequest};
 
 use crate::theme::Theme;
@@ -45,17 +45,23 @@ impl AppView {
         let approved = !pr.is_draft && decision == Some("APPROVED");
         let partial = !pr.is_draft && !pr.approvers.is_empty();
 
+        let upmerge = is_upmerge(pr);
+
         let (bg, bg_hover) = if approved {
             (t.card_approved_bg, t.card_approved_bg_hover)
         } else if partial {
             (t.card_partial_bg, t.card_partial_bg_hover)
+        } else if upmerge {
+            (t.card_upmerge_bg, t.card_upmerge_bg_hover)
         } else {
             (t.bg_subtle, t.bg_hover)
         };
 
         // The React card has a 3px left border in the review color; GPUI has a
         // single border color per element, so it is a separate strip.
-        let strip = if pr.is_draft {
+        let strip = if upmerge && !approved && !partial {
+            t.indigo_border
+        } else if pr.is_draft {
             t.border
         } else {
             match decision {
@@ -219,6 +225,15 @@ impl AppView {
             .flex_col()
             .items_end()
             .gap_1()
+            .when(upmerge, |e| {
+                e.child(badge(
+                    t.indigo_bg,
+                    t.indigo,
+                    t.indigo_border,
+                    Some("icons/git-merge.svg"),
+                    "Upmerge",
+                ))
+            })
             .child(review_badge(&t, decision, pr.is_draft))
             .when(pr.has_conflicts, |e| {
                 e.child(badge(
