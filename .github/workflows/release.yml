@@ -50,9 +50,12 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # release-please's TOML updater cannot target a package by name in Cargo.lock,
-  # so the lockfile is synced here. Separate job on purpose: a failure here must
-  # never block a release build.
+  # Safety net: release-please bumps the two workspace crates in Cargo.lock itself
+  # (extra-files in release-please-config.json), in the same commit as Cargo.toml,
+  # so this normally finds nothing to do and pushes no second commit. If the
+  # lockfile ever drifts (new workspace crate, other dependency change), it is
+  # synced here. Separate job on purpose: a failure here must never block a
+  # release build.
   sync-lockfile:
     needs: release-please
     if: ${{ needs.release-please.outputs.prs_created == 'true' }}

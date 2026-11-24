@@ -9,18 +9,30 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR cancels the run still in progress for the previous commit
+# (release-please pushes twice in a row: version bump, then the Cargo.lock sync).
+# Runs on develop are never cancelled, so every merge keeps its own result.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     # GPUI needs a graphics stack to build; Windows is the supported target.
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
+        with:
+          # Only develop writes the cache; PRs read it. Avoids one ~GB cache per PR branch.
+          save-if: ${{ github.ref == 'refs/heads/develop' }}
       - run: cargo test --workspace
 
   manifest-script:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: latest.json generator output matches the committed fixture
