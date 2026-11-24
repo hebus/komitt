@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.15](https://github.com/hebus/komitt/compare/v0.1.14...v0.1.15) (2026-11-24)
+
+
+### Features
+
+* **card:** highlight upmerge PRs with a badge and background ([5ac9bff](https://github.com/hebus/komitt/commit/5ac9bffe84154825d72b923e23ab0bfa404a5b9d))
+* **card:** highlight upmerge PRs with a badge and background ([8ccd1d8](https://github.com/hebus/komitt/commit/8ccd1d80dc87a3d81416c467cf3889120bee3d20))
+
 ## [0.1.14](https://github.com/hebus/komitt/compare/v0.1.13...v0.1.14) (2026-11-24)
 
 
