@@ -2,26 +2,20 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "packages": {
     ".": {
-      "release-type": "simple",
-      "package-name": "pr-dashboard",
+      "release-type": "node",
       "include-component-in-tag": false,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
         {
-          "type": "toml",
-          "path": "Cargo.toml",
-          "jsonpath": "$.workspace.package.version"
+          "type": "json",
+          "path": "src-tauri/tauri.conf.json",
+          "jsonpath": "$.version"
         },
         {
           "type": "toml",
-          "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='pr-dashboard-app')].version"
-        },
-        {
-          "type": "toml",
-          "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='pr-dashboard-core')].version"
+          "path": "src-tauri/Cargo.toml",
+          "jsonpath": "$.package.version"
         }
       ]
     }
