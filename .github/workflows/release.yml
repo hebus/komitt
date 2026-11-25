@@ -141,7 +141,9 @@ jobs:
   # builds (0.1.7 - 0.1.15) read it with cargo-packager-updater, which requires
   # that field and otherwise never sees an update. Runs after the builds because
   # tauri-action rewrites the file each time it uploads a platform. Also runs when
-  # a build failed, so a partial release still gets a readable manifest.
+  # a build failed, so a partial release still gets a readable manifest. Also
+  # restores platforms dropped when the two macOS jobs rewrite the file at the
+  # same time, from the `.sig` files attached to the release.
   updater-format:
     needs: [release-please, build]
     if: ${{ always() && needs.release-please.outputs.release_created == 'true' }}
@@ -158,5 +160,6 @@ jobs:
         run: |
           mkdir out
           gh release download "$TAG" --pattern latest.json --dir out
-          python3 scripts/add_updater_format.py out/latest.json
+          gh release download "$TAG" --pattern '*.sig' --dir out/sigs
+          python3 scripts/add_updater_format.py out/latest.json out/sigs
           gh release upload "$TAG" out/latest.json --clobber
