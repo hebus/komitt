@@ -136,3 +136,27 @@ jobs:
           tagName: ${{ needs.release-please.outputs.tag_name }}
           prerelease: false
           args: ${{ matrix.args }}
+
+  # tauri-action writes `latest.json` without a `format` per platform. The GPUI
+  # builds (0.1.7 - 0.1.15) read it with cargo-packager-updater, which requires
+  # that field and otherwise never sees an update. Runs after the builds because
+  # tauri-action rewrites the file each time it uploads a platform. Also runs when
+  # a build failed, so a partial release still gets a readable manifest.
+  updater-format:
+    needs: [release-please, build]
+    if: ${{ always() && needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Add `format` to latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          mkdir out
+          gh release download "$TAG" --pattern latest.json --dir out
+          python3 scripts/add_updater_format.py out/latest.json
+          gh release upload "$TAG" out/latest.json --clobber
