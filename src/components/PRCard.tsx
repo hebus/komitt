@@ -145,7 +145,7 @@ export function PRCard({ pr, provider = "github" }: Props) {
 
   return (
     <div
-      className={`${bgClass} border border-[var(--c-border)] ${borderClass} rounded-lg p-3 transition-colors cursor-pointer group`}
+      className={`${bgClass} border border-[var(--c-border)] ${borderClass} rounded-lg p-3 transition cursor-pointer group${pr.isDraft ? " opacity-50 hover:opacity-100" : ""}`}
       onClick={openPR}
     >
       <div className="flex items-start justify-between gap-2">

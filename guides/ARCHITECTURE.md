@@ -331,6 +331,10 @@ Le nom de branche est rendu comme un `<button>` :
 - Le `title` reflète l'état : `Copy "<branche>"` ou `Copied!`.
 - `navigator.clipboard` est disponible dans la WebView2 (Tauri) ; l'appel est protégé par un `try/catch` silencieux si l'API est indisponible.
 
+### Cartes en draft
+
+Une PR/MR en `isDraft` est rendue estompée (`opacity-50`, retour à `opacity-100` au survol) pour ne pas distraire le regard ; badge `Draft` et bordure neutre inchangés. Elle reste cliquable et copiable normalement.
+
 ### Badge et fond « Upmerge »
 
 Un « upmerge » propage une branche de maintenance vers une plus récente pour résoudre des conflits. `isUpmerge(pr)` (`types/index.ts`) le détecte quand `headRefName` ou `title`, mis en minuscules et sans `-`, `_` ni espace, contient `upmerge` (`upmerge/…`, `Up-merge release/1.2`). `PRCard` affiche alors un badge indigo `Upmerge` (icône `GitMerge`) au-dessus du badge de review, un fond `--c-card-upmerge-bg` (+ `-hover`) et une bordure gauche indigo. Les fonds approuvé / partiellement approuvé restent prioritaires (la bordure indigo n'est utilisée que dans ce cas pas approuvé).
