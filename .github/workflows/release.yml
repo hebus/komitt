@@ -1,0 +1,134 @@
+name: Release
+
+# Every push to develop runs release-please. It keeps a "release PR" up to date
+# (version bump in package.json, package-lock.json, tauri.conf.json, Cargo.toml and
+# Cargo.lock + CHANGELOG, computed from the conventional commits). Merging that PR
+# makes release-please tag the commit and create the GitHub release; the jobs below
+# then build, sign and attach the installers and `latest.json` to that release.
+#
+# The build jobs live in this same workflow on purpose: a tag created with
+# GITHUB_TOKEN does not trigger other workflows.
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+      prs_created: ${{ steps.rp.outputs.prs_created }}
+      pr: ${{ steps.rp.outputs.pr }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          # PAT instead of GITHUB_TOKEN: pushes made with GITHUB_TOKEN produce
+          # broken CI runs on the release PR ("workflow file issue", no jobs).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # release-please's TOML updater cannot target a package by name in Cargo.lock
+  # (filters return nothing on its parsed lockfile), so the lockfile is synced here.
+  # Separate job on purpose: a failure here must never block a release build.
+  sync-lockfile:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.prs_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Sync Cargo.lock with the bumped version
+        run: cargo update --workspace --manifest-path src-tauri/Cargo.toml
+
+      # Amend the release commit instead of adding a second one: a single push
+      # means a single CI run on the release PR.
+      - name: Amend the release commit if changed
+        run: |
+          if git diff --quiet -- src-tauri/Cargo.lock; then
+            echo "Cargo.lock already in sync"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --amend --no-edit -- src-tauri/Cargo.lock
+          git push --force-with-lease
+
+  build:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: ""
+          - os: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - os: macos-latest
+            args: "--target x86_64-apple-darwin"
+          - os: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Check tag matches the app version
+        shell: bash
+        run: |
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "v$version" != "${{ needs.release-please.outputs.tag_name }}" ]; then
+            echo "Tag ${{ needs.release-please.outputs.tag_name }} does not match tauri.conf.json version $version" >&2
+            exit 1
+          fi
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ contains(matrix.args, 'darwin') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # No releaseName/releaseBody: the release already exists (created by
+      # release-please) and keeps its generated changelog as body.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ needs.release-please.outputs.tag_name }}
+          prerelease: false
+          args: ${{ matrix.args }}
