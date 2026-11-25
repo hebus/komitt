@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.16](https://github.com/hebus/komitt/compare/v0.1.15...v0.1.16) (2026-11-25)
+
+
+### Bug Fixes
+
+* **ci:** fetch full history before amending the release commit ([d688424](https://github.com/hebus/komitt/commit/d688424ccbbadd73d67b1b9e806b0a0fbe8e447d))
+* **ci:** fetch full history before amending the release commit ([390c077](https://github.com/hebus/komitt/commit/390c07769202f745cca1139158f326a2b5644afd))
+
+
+### Reverts
+
+* back to Tauri + React, with the post-GPUI app features ([#32](https://github.com/hebus/komitt/issues/32)) ([e01bc2f](https://github.com/hebus/komitt/commit/e01bc2f4d943c5507668e504b1a26cdbf1de6cf8))
+
 ## [0.1.15](https://github.com/hebus/komitt/compare/v0.1.14...v0.1.15) (2026-11-24)
 
 

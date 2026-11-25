@@ -1,6 +1,6 @@
 [package]
 name = "pr-dashboard"
-version = "0.1.15"
+version = "0.1.16"
 description = "GitHub PR Dashboard"
 authors = ["you"]
 edition = "2021"
