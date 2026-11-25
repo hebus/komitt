@@ -51,6 +51,10 @@ jobs:
         with:
           ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          # Full history: with the default shallow clone, `git commit --amend`
+          # rewrites the tip as a parentless commit, and the force-push then
+          # makes GitHub close the release PR.
+          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
 
