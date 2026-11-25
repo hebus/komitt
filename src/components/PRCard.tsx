@@ -100,8 +100,16 @@ function Avatar({ login, size = 20 }: { login: string; avatarUrl?: string; size?
   );
 }
 
+/** Label colors are chosen by users (often very light or very dark), so the
+ *  text and border are mixed with the theme's own text/border color: a pale
+ *  label stays readable on a light card, a dark one on a dark card. */
 function labelColor(hex: string) {
-  return { bg: `#${hex}26`, text: `#${hex}`, border: `#${hex}66` };
+  const c = `#${hex.replace(/^#/, "")}`;
+  return {
+    bg: `${c}26`,
+    text: `color-mix(in srgb, ${c} 45%, var(--c-text))`,
+    border: `color-mix(in srgb, ${c} 60%, var(--c-border))`,
+  };
 }
 
 export function PRCard({ pr, provider = "github" }: Props) {

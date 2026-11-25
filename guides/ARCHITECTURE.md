@@ -331,6 +331,10 @@ Le nom de branche est rendu comme un `<button>` :
 - Le `title` reflète l'état : `Copy "<branche>"` ou `Copied!`.
 - `navigator.clipboard` est disponible dans la WebView2 (Tauri) ; l'appel est protégé par un `try/catch` silencieux si l'API est indisponible.
 
+### Couleurs des labels
+
+Les couleurs de labels sont choisies par les utilisateurs (souvent très claires ou très sombres). `labelColor()` (`PRCard.tsx`) garde un fond translucide (`#hex26`) mais mélange le texte et la bordure avec les couleurs du thème via `color-mix(in srgb, #hex 45%, var(--c-text))` / `… 60%, var(--c-border)` : un label pâle reste lisible sur une carte claire, un label sombre sur une carte sombre, sans connaître le thème côté JS.
+
 ### Cartes en draft
 
 Une PR/MR en `isDraft` est rendue estompée (`opacity-50`, retour à `opacity-100` au survol) pour ne pas distraire le regard ; badge `Draft` et bordure neutre inchangés. Elle reste cliquable et copiable normalement.
