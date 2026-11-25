@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.17](https://github.com/hebus/komitt/compare/v0.1.16...v0.1.17) (2026-11-25)
+
+
+### Bug Fixes
+
+* **ci:** add the `format` field to latest.json for the GPUI updater ([bc5575a](https://github.com/hebus/komitt/commit/bc5575a43958f79d584179f5268bd4a64bd4a0ab))
+* **ci:** add the format field to latest.json for the GPUI updater ([286c326](https://github.com/hebus/komitt/commit/286c3260077704ddcd7c04bf6d4f734ce4368ec6))
+
 ## [0.1.16](https://github.com/hebus/komitt/compare/v0.1.15...v0.1.16) (2026-11-25)
 
 
