@@ -33,6 +33,9 @@ jobs:
       - id: rp
         uses: googleapis/release-please-action@v4
         with:
+          # PAT instead of GITHUB_TOKEN: pushes made with GITHUB_TOKEN produce
+          # broken CI runs on the release PR ("workflow file issue", no jobs).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -47,13 +50,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Sync Cargo.lock with the bumped version
         run: cargo update --workspace --manifest-path src-tauri/Cargo.toml
 
-      - name: Commit if changed
+      # Amend the release commit instead of adding a second one: a single push
+      # means a single CI run on the release PR.
+      - name: Amend the release commit if changed
         run: |
           if git diff --quiet -- src-tauri/Cargo.lock; then
             echo "Cargo.lock already in sync"
@@ -61,8 +67,8 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: sync Cargo.lock" -- src-tauri/Cargo.lock
-          git push
+          git commit --amend --no-edit -- src-tauri/Cargo.lock
+          git push --force-with-lease
 
   build:
     needs: release-please

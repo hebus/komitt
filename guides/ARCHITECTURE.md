@@ -320,12 +320,17 @@ Quand un repo a des PR ouvertes sur plusieurs branches cibles (`baseRefName`) di
 |-------|--------|-------------|
 | Carte (zone générale) | Clic | Ouvre la PR dans le navigateur (`invoke("open_url")`) |
 | Nom de la branche source (`headRefName`) | Clic | Copie le nom de branche dans le presse-papiers via `navigator.clipboard.writeText` |
+| Icône `Copy` à droite du titre | Clic | Copie l'URL de la PR/MR (`pr.url`) ; état local `urlCopied` distinct de `copied` |
 
 Le nom de branche est rendu comme un `<button>` :
 - `e.stopPropagation()` empêche le clic d'ouvrir aussi la PR.
 - Une icône `Copy` (lucide) apparaît au survol de la carte (`opacity-0 group-hover:opacity-60`) ; après copie elle bascule en `Check` vert pendant 1,5 s via un état local `copied` (`setTimeout`).
 - Le `title` reflète l'état : `Copy "<branche>"` ou `Copied!`.
 - `navigator.clipboard` est disponible dans la WebView2 (Tauri) ; l'appel est protégé par un `try/catch` silencieux si l'API est indisponible.
+
+### Badge et fond « Upmerge »
+
+Un « upmerge » propage une branche de maintenance vers une plus récente pour résoudre des conflits. `isUpmerge(pr)` (`types/index.ts`) le détecte quand `headRefName` ou `title`, mis en minuscules et sans `-`, `_` ni espace, contient `upmerge` (`upmerge/…`, `Up-merge release/1.2`). `PRCard` affiche alors un badge indigo `Upmerge` (icône `GitMerge`) au-dessus du badge de review, un fond `--c-card-upmerge-bg` (+ `-hover`) et une bordure gauche indigo. Les fonds approuvé / partiellement approuvé restent prioritaires (la bordure indigo n'est utilisée que dans ce cas pas approuvé).
 
 ### Badge et filtre « Mergeable »
 
@@ -537,7 +542,7 @@ Tauri refuse tout binaire non signé avec la clé correspondant à `pubkey`. La 
 
 Le versionnement et la publication sont automatisés par [release-please](https://github.com/googleapis/release-please) (`release-please-config.json`, `.release-please-manifest.json`), à partir des **Conventional Commits** :
 
-1. Chaque push sur `develop` exécute le job `release-please` de `.github/workflows/release.yml`, qui ouvre ou met à jour une **PR de release** (`chore(release): X.Y.Z`) : version dans `package.json`, `package-lock.json`, `tauri.conf.json` (`extra-files`, jsonpath `$.version`), `Cargo.toml` (toml, jsonpath), plus `CHANGELOG.md`. `Cargo.lock` n'est **pas** géré par `release-please` : son updater TOML ne sait pas cibler un paquet par son nom (les filtres `jsonpath` ne retournent rien sur son lockfile parsé, seul l'accès par index marche, trop fragile). Un job `sync-lockfile`, séparé pour ne jamais bloquer une release, exécute `cargo update --workspace` sur la branche de la PR de release et y pousse un commit `chore: sync Cargo.lock` si besoin. Le titre de la PR est fixé par `pull-request-title-pattern`. Fusionner les PR de fonctionnalité en **squash** : sinon le commit de branche et celui de `develop` apparaissent tous deux dans le changelog. Tant que la version est en 0.x : `fix` et `feat` → patch, `feat!` / `BREAKING CHANGE` → minor (`bump-patch-for-minor-pre-major` + `bump-minor-pre-major`).
+1. Chaque push sur `develop` exécute le job `release-please` de `.github/workflows/release.yml`, qui ouvre ou met à jour une **PR de release** (`chore(release): X.Y.Z`) : version dans `package.json`, `package-lock.json`, `tauri.conf.json` (`extra-files`, jsonpath `$.version`), `Cargo.toml` (toml, jsonpath), plus `CHANGELOG.md`. `Cargo.lock` n'est **pas** géré par `release-please` : son updater TOML ne sait pas cibler un paquet par son nom (les filtres `jsonpath` ne retournent rien sur son lockfile parsé, seul l'accès par index marche, trop fragile). Un job `sync-lockfile`, séparé pour ne jamais bloquer une release, exécute `cargo update --workspace` sur la branche de la PR de release et, si besoin, **amende** le commit de release (`git commit --amend` + `push --force-with-lease`) pour n'avoir qu'un seul push, donc un seul run de CI. `release-please` et ce job utilisent le secret `RELEASE_PLEASE_TOKEN` (PAT) : les pushes faits avec `GITHUB_TOKEN` donnent des runs de CI en erreur (« workflow file issue »). Le titre de la PR est fixé par `pull-request-title-pattern`. Fusionner les PR de fonctionnalité en **squash** : sinon le commit de branche et celui de `develop` apparaissent tous deux dans le changelog. Tant que la version est en 0.x : `fix` et `feat` → patch, `feat!` / `BREAKING CHANGE` → minor (`bump-patch-for-minor-pre-major` + `bump-minor-pre-major`).
 2. **Fusionner cette PR** déclenche à nouveau le workflow : release-please crée le tag `vX.Y.Z` et la release GitHub (corps = changelog), `release_created` passe à `true` et les jobs `build` s'exécutent.
 3. `build` (Windows, macOS arm64 + x64, Linux) tourne dans **le même workflow** : un tag créé avec `GITHUB_TOKEN` ne déclenche pas d'autre workflow. Il vérifie que le tag correspond à `tauri.conf.json`, puis `tauri-action` signe et attache installeurs, `.sig` et `latest.json` à la release existante (sans `releaseName`/`releaseBody`, pour conserver le changelog).
 
