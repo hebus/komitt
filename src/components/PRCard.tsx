@@ -2,7 +2,7 @@ import { useState } from "react";
 import { GitPullRequest, GitMerge, Clock, ChevronRight, Copy, Check, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Provider, PullRequest, ReviewDecision, Reviewer } from "../types";
-import { prPrefix, prTerm, timeAgo } from "../types";
+import { isUpmerge, prPrefix, prTerm, timeAgo } from "../types";
 
 interface Props {
   pr: PullRequest;
@@ -47,15 +47,18 @@ function reviewBadge(decision: ReviewDecision, isDraft: boolean) {
   }
 }
 
-function cardBgColor(decision: ReviewDecision, approvers: Reviewer[], isDraft: boolean) {
+function cardBgColor(decision: ReviewDecision, approvers: Reviewer[], isDraft: boolean, upmerge: boolean) {
   if (!isDraft && decision === "APPROVED")
     return "bg-[var(--c-card-approved-bg)] hover:bg-[var(--c-card-approved-bg-hover)]";
   if (!isDraft && approvers.length > 0)
     return "bg-[var(--c-card-partial-bg)] hover:bg-[var(--c-card-partial-bg-hover)]";
+  if (upmerge)
+    return "bg-[var(--c-card-upmerge-bg)] hover:bg-[var(--c-card-upmerge-bg-hover)]";
   return "bg-[var(--c-bg-subtle)] hover:bg-[var(--c-bg-hover)]";
 }
 
-function cardBorderColor(decision: ReviewDecision, isDraft: boolean) {
+function cardBorderColor(decision: ReviewDecision, isDraft: boolean, upmergeOnly: boolean) {
+  if (upmergeOnly) return "border-l-[var(--c-indigo-border)] border-l-[3px]";
   if (isDraft) return "border-[var(--c-border)]";
   switch (decision) {
     case "APPROVED":         return "border-l-[var(--c-green-border)] border-l-[3px]";
@@ -132,8 +135,13 @@ export function PRCard({ pr, provider = "github" }: Props) {
     }
   }
 
-  const borderClass = cardBorderColor(pr.reviewDecision, pr.isDraft);
-  const bgClass = cardBgColor(pr.reviewDecision, pr.approvers, pr.isDraft);
+  const upmerge = isUpmerge(pr);
+  const approved = !pr.isDraft && pr.reviewDecision === "APPROVED";
+  const partial = !pr.isDraft && pr.approvers.length > 0;
+  // Approved / partially approved backgrounds take precedence over upmerge.
+  const upmergeOnly = upmerge && !approved && !partial;
+  const borderClass = cardBorderColor(pr.reviewDecision, pr.isDraft, upmergeOnly);
+  const bgClass = cardBgColor(pr.reviewDecision, pr.approvers, pr.isDraft, upmerge);
 
   return (
     <div
@@ -197,6 +205,15 @@ export function PRCard({ pr, provider = "github" }: Props) {
           </div>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1">
+          {upmerge && (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[var(--c-indigo-bg)] text-[var(--c-indigo)] border border-[var(--c-indigo-border)]"
+              title="Upmerge of a maintenance branch"
+            >
+              <GitMerge size={10} />
+              Upmerge
+            </span>
+          )}
           {reviewBadge(pr.reviewDecision, pr.isDraft)}
           {pr.hasConflicts && (
             <span

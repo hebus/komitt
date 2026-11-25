@@ -97,6 +97,13 @@ export interface PREvent {
   url: string;
 }
 
+/** An "upmerge" PR/MR propagates a maintenance branch into a newer one to
+ *  resolve conflicts. Detected from the source branch name or the title. */
+export function isUpmerge(pr: Pick<PullRequest, "headRefName" | "title">): boolean {
+  const has = (s: string) => s.toLowerCase().replace(/[-_ ]/g, "").includes("upmerge");
+  return has(pr.headRefName) || has(pr.title);
+}
+
 export function generateId(): string {
   return Math.random().toString(36).slice(2, 9);
 }

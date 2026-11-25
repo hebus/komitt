@@ -32,6 +32,8 @@ body {
   --c-card-partial-bg-hover:   #e2faea;
   --c-card-approved-bg:        #d4f8de;
   --c-card-approved-bg-hover:  #c1f2cc;
+  --c-card-upmerge-bg:         #eef2ff;
+  --c-card-upmerge-bg-hover:   #e0e7ff;
 
   --c-amber:           #9a6700;
   --c-amber-bg:        #fff8c5;
@@ -72,6 +74,8 @@ body {
   --c-card-partial-bg-hover:   #0e2416;
   --c-card-approved-bg:        #0f2e1a;
   --c-card-approved-bg-hover:  #143d22;
+  --c-card-upmerge-bg:         #14122e;
+  --c-card-upmerge-bg-hover:   #1b1840;
 
   --c-amber:           #d29922;
   --c-amber-bg:        #2d2005;
