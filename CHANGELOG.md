@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.18](https://github.com/hebus/komitt/compare/v0.1.17...v0.1.18) (2026-11-25)
+
+
+### Bug Fixes
+
+* **ci:** restore platforms dropped from latest.json by concurrent macOS jobs ([6c98c60](https://github.com/hebus/komitt/commit/6c98c608c3edfaf9954642fad7087f32d99add2c))
+* **ci:** restore platforms dropped from latest.json by concurrent macOS jobs ([fcf76eb](https://github.com/hebus/komitt/commit/fcf76eb8c581f6f924e536fad27cafbdaa28590c))
+
 ## [0.1.17](https://github.com/hebus/komitt/compare/v0.1.16...v0.1.17) (2026-11-25)
 
 
