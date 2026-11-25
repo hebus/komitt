@@ -35,7 +35,7 @@ function SkeletonCard({ titleW }: { titleW: string }) {
 import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import type { RepositoryConfig, PullRequest, FilterStatus } from "../types";
-import { branchKind, compareBranches, matchesFilter, prTerm, repoWebUrl, timeAgo } from "../types";
+import { branchKind, compareBranches, matchesFilter, prTerm, providerLabel, repoWebUrl, timeAgo } from "../types";
 import { PRCard } from "./PRCard";
 import { ProviderIcon } from "./ProviderIcon";
 
@@ -87,7 +87,7 @@ export function RepoGroup({
   const approvedCount = prs.filter((pr) => pr.reviewDecision === "APPROVED").length;
   const repoLabel     = repo.label ?? `${repo.owner}/${repo.name}`;
   const term          = prTerm(repo.provider);
-  const providerName  = repo.provider === "gitlab" ? "GitLab" : "GitHub";
+  const providerName  = providerLabel(repo.provider);
 
   function branchBadgeClass(branch: string) {
     const kind = branchKind(branch);

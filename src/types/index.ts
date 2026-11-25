@@ -1,8 +1,25 @@
-export type Provider = "github" | "gitlab";
+/** "github" is a GitHub Enterprise instance, "githubcom" is github.com itself. */
+export type Provider = "github" | "githubcom" | "gitlab";
+
+/** Web URL of github.com, the fixed "instance" of the `githubcom` provider. */
+export const GITHUB_COM_URL = "https://github.com";
+
+export function providerLabel(provider: Provider): string {
+  switch (provider) {
+    case "gitlab":
+      return "GitLab";
+    case "githubcom":
+      return "GitHub.com";
+    default:
+      return "GitHub";
+  }
+}
 
 export interface Config {
   githubToken: string;
   githubUrl: string;
+  /** Token for github.com (fixed URL, no instance field). */
+  githubComToken: string;
   gitlabToken: string;
   gitlabUrl: string;
   refreshInterval: number;
@@ -20,9 +37,14 @@ export interface RepositoryConfig {
 
 /** Token and base URL of the source a given repository belongs to. */
 export function providerCreds(config: Config, repo: RepositoryConfig) {
-  return repo.provider === "gitlab"
-    ? { token: config.gitlabToken, baseUrl: config.gitlabUrl }
-    : { token: config.githubToken, baseUrl: config.githubUrl };
+  switch (repo.provider) {
+    case "gitlab":
+      return { token: config.gitlabToken, baseUrl: config.gitlabUrl };
+    case "githubcom":
+      return { token: config.githubComToken, baseUrl: GITHUB_COM_URL };
+    default:
+      return { token: config.githubToken, baseUrl: config.githubUrl };
+  }
 }
 
 export function repoWebUrl(baseUrl: string, repo: RepositoryConfig): string {

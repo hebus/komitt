@@ -35,6 +35,7 @@ Keep an eye on all your open PRs across multiple repositories without ever leavi
 | **In-app toasts** | Slide-in toasts with progress bar — fallback when OS notifications are blocked |
 | **Notification history** | Bell icon with unread badge, full history panel with mark-as-read |
 | **GitHub Enterprise** | Fully supports GHES — just set your instance URL in settings |
+| **github.com** | Separate token, fixed URL; API served from `api.github.com` |
 | **GitLab** | Self-hosted or gitlab.com; MR numbers shown as `!123`, approvals and « changes requested » included |
 | **Persistent config** | Tokens, repos, interval stored in `%APPDATA%` via `tauri-plugin-store` |
 | **Skeleton loading** | Animated placeholders on first fetch, silent background refresh afterwards |
@@ -98,9 +99,10 @@ On first launch, open **Settings** (gear icon, top right) and fill in:
 | Field | Description |
 |-------|-------------|
 | **GitHub URL / Token** | Your GitHub instance (default: `https://github.sinequa.com`) + a PAT with `repo` scope |
+| **GitHub.com Token** | A PAT with `repo` scope for github.com (the URL is fixed) |
 | **GitLab URL / Token** | Your GitLab instance (default: `https://gitlab.chapsvision.in`) + a PAT with `read_api` scope |
 | **Refresh interval** | Polling interval in seconds (default: 60) |
-| **Repositories** | One row per repo: a GitHub/GitLab switch, then `owner/repo` |
+| **Repositories** | One row per repo: a GitHub / GitHub.com / GitLab switch, then `owner/repo` |
 
 Only the source you actually use needs a token — a missing one only affects its own repo groups.
 
@@ -119,6 +121,7 @@ One **GraphQL** call per repository fetches the 50 most recently updated open PR
 ```
 GitHub  list   →  {githubUrl}/api/graphql
         merged →  {githubUrl}/api/v3/repos/{owner}/{repo}/pulls/{number}
+        (github.com: https://api.github.com/graphql and /repos/{owner}/{repo}/pulls/{number})
 
 GitLab  list   →  {gitlabUrl}/api/graphql
         merged →  {gitlabUrl}/api/graphql

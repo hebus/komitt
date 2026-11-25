@@ -24,7 +24,7 @@ import { ToastContainer } from "./components/ToastContainer";
 import { NotificationPanel } from "./components/NotificationPanel";
 import { UpdateBanner } from "./components/UpdateBanner";
 import type { FilterStatus, PREvent } from "./types";
-import { providerCreds } from "./types";
+import { providerCreds, providerLabel } from "./types";
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -89,7 +89,7 @@ export default function App() {
     new Set(
       config.repositories
         .filter((repo) => providerCreds(config, repo).token.length === 0)
-        .map((repo) => (repo.provider === "gitlab" ? "GitLab" : "GitHub")),
+        .map((repo) => providerLabel(repo.provider)),
     ),
   );
 

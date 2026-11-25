@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { X, Plus, Trash2, Eye, EyeOff, GitPullRequest, Bell, CheckCircle } from "lucide-react";
 import type { Config, Provider, RepositoryConfig } from "../types";
-import { generateId } from "../types";
+import { generateId, GITHUB_COM_URL, providerLabel } from "../types";
 import { ProviderIcon } from "./ProviderIcon";
 
 const DEFAULT_GITLAB_NAMESPACE = "sinequa/rnd";
+
+/** The repo provider button cycles GitHub (Enterprise) → GitHub.com → GitLab. */
+const NEXT_PROVIDER: Record<Provider, Provider> = {
+  github: "githubcom",
+  githubcom: "gitlab",
+  gitlab: "github",
+};
 
 interface Props {
   config: Config;
@@ -26,7 +33,7 @@ function RepoInput({
   const isGitlab = repo.provider === "gitlab";
 
   function toggleProvider() {
-    const provider: Provider = isGitlab ? "github" : "gitlab";
+    const provider = NEXT_PROVIDER[repo.provider];
     // Pre-fill the namespace when switching to GitLab, but never overwrite
     // something the user already typed.
     const owner =
@@ -41,11 +48,11 @@ function RepoInput({
       <button
         type="button"
         onClick={toggleProvider}
-        title={`Switch to ${isGitlab ? "GitHub" : "GitLab"}`}
-        className="flex items-center gap-1.5 shrink-0 w-[88px] px-2 py-1.5 bg-[var(--c-bg)] border border-[var(--c-border)] rounded text-xs font-medium text-[var(--c-text)] hover:bg-[var(--c-bg-hover)] transition-colors"
+        title={`Switch to ${providerLabel(NEXT_PROVIDER[repo.provider])}`}
+        className="flex items-center gap-1.5 shrink-0 w-[104px] px-2 py-1.5 bg-[var(--c-bg)] border border-[var(--c-border)] rounded text-xs font-medium text-[var(--c-text)] hover:bg-[var(--c-bg-hover)] transition-colors"
       >
         <ProviderIcon provider={repo.provider} size={13} />
-        {isGitlab ? "GitLab" : "GitHub"}
+        {providerLabel(repo.provider)}
       </button>
       <input
         type="text"
@@ -92,12 +99,13 @@ function SourceSection({
   provider: Provider;
   url: string;
   token: string;
-  onUrlChange: (v: string) => void;
+  /** Absent for github.com, whose URL is fixed. */
+  onUrlChange?: (v: string) => void;
   onTokenChange: (v: string) => void;
 }) {
   const [showToken, setShowToken] = useState(false);
   const isGitlab = provider === "gitlab";
-  const name = isGitlab ? "GitLab" : "GitHub";
+  const name = providerLabel(provider);
 
   return (
     <div className="flex flex-col gap-3 p-3 border border-[var(--c-border)] rounded-lg">
@@ -106,20 +114,22 @@ function SourceSection({
         <span className={labelCls}>{name}</span>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs text-[var(--c-text-muted)]">
-          {isGitlab
-            ? "URL de votre instance GitLab."
-            : "URL de votre instance GitHub (Enterprise ou github.com)."}
-        </label>
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => onUrlChange(e.target.value.replace(/\/$/, ""))}
-          placeholder={isGitlab ? "https://gitlab.chapsvision.in" : "https://github.sinequa.com"}
-          className={`${inputCls} font-mono`}
-        />
-      </div>
+      {onUrlChange && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-[var(--c-text-muted)]">
+            {isGitlab
+              ? "URL de votre instance GitLab."
+              : "URL de votre instance GitHub Enterprise."}
+          </label>
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value.replace(/\/$/, ""))}
+            placeholder={isGitlab ? "https://gitlab.chapsvision.in" : "https://github.sinequa.com"}
+            className={`${inputCls} font-mono`}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label className="text-xs text-[var(--c-text-muted)]">
@@ -234,6 +244,13 @@ export function Settings({ config, onSave, onClose, onTestNotification }: Props)
             token={local.githubToken}
             onUrlChange={(v) => setLocal((c) => ({ ...c, githubUrl: v }))}
             onTokenChange={(v) => setLocal((c) => ({ ...c, githubToken: v }))}
+          />
+
+          <SourceSection
+            provider="githubcom"
+            url={GITHUB_COM_URL}
+            token={local.githubComToken}
+            onTokenChange={(v) => setLocal((c) => ({ ...c, githubComToken: v }))}
           />
 
           <SourceSection

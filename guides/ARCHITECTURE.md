@@ -78,11 +78,12 @@ pr-dashboard/
 La configuration est persistée dans un fichier JSON via `tauri-plugin-store` (emplacement : `%APPDATA%\com.sinequa.prdashboard\config.json`).
 
 ```typescript
-type Provider = "github" | "gitlab";
+type Provider = "github" | "githubcom" | "gitlab"; // "github" = GitHub Enterprise, "githubcom" = github.com
 
 interface Config {
   githubToken: string;        // PAT GitHub (scope: repo)
   githubUrl: string;          // URL de l'instance GitHub (défaut: https://github.sinequa.com)
+  githubComToken: string;     // PAT github.com (URL fixe https://github.com, pas de champ d'instance)
   gitlabToken: string;        // PAT GitLab (scope: read_api)
   gitlabUrl: string;          // URL de l'instance GitLab (défaut: https://gitlab.chapsvision.in)
   refreshInterval: number;    // Intervalle de polling en secondes (défaut: 60)
@@ -134,13 +135,15 @@ App.tsx
 
 ## APIs GitHub / GitLab
 
-L'application supporte **GitHub Enterprise Server** (GHES) et **GitLab** (self-hosted ou gitlab.com). L'URL de base de chaque source est configurable dans les Settings ; les endpoints en sont dérivés automatiquement.
+L'application supporte **GitHub Enterprise Server** (GHES), **github.com** (provider `githubcom`, token dédié et URL fixe `https://github.com`) et **GitLab** (self-hosted ou gitlab.com). L'URL de base de chaque source est configurable dans les Settings ; les endpoints en sont dérivés automatiquement.
 
 | Usage | GitHub | GitLab |
 |-------|--------|--------|
 | Liste des PR/MR | `{githubUrl}/api/graphql` (GraphQL) | `{gitlabUrl}/api/graphql` (GraphQL) |
 | Vérification de merge | `{githubUrl}/api/v3/repos/{owner}/{repo}/pulls/{number}` (REST v3) | `{gitlabUrl}/api/graphql` (GraphQL) |
 | Web | `{githubUrl}/{owner}/{repo}/pulls` | `{gitlabUrl}/{namespace}/{repo}/-/merge_requests` |
+
+**github.com.** Les URLs d'API ne suivent pas le schéma GHES : `providers/github.rs::api_endpoints(base_url)` renvoie `https://api.github.com/graphql` et `https://api.github.com` quand la base est `https://github.com`, et `{base}/api/graphql` / `{base}/api/v3` sinon. `Provider::GithubCom` (sérialisé `githubcom`) passe par le même code que `Github`. Côté front, `providerCreds()` (`types/index.ts`) choisit token et URL selon le provider, et le bouton de provider d'un dépôt (Settings) alterne GitHub → GitHub.com → GitLab.
 
 Authentification : `Authorization: Bearer <token>` dans les deux cas — un seul code path, et côté GitLab cela couvre PAT, project/group tokens et OAuth (contrairement à `PRIVATE-TOKEN`). Scopes requis : `repo` (GitHub), `read_api` (GitLab).
 

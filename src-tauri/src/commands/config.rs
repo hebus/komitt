@@ -39,6 +39,9 @@ pub struct Config {
     pub github_token: String,
     #[serde(default = "default_github_url")]
     pub github_url: String,
+    /// Token for github.com (fixed URL, no instance field).
+    #[serde(default)]
+    pub github_com_token: String,
     #[serde(default)]
     pub gitlab_token: String,
     #[serde(default = "default_gitlab_url")]
@@ -54,6 +57,7 @@ impl Default for Config {
         Config {
             github_token: String::new(),
             github_url: default_github_url(),
+            github_com_token: String::new(),
             gitlab_token: String::new(),
             gitlab_url: default_gitlab_url(),
             refresh_interval: default_refresh_interval(),
@@ -109,6 +113,22 @@ mod tests {
         assert_eq!(config.repositories[0].provider, Provider::Github);
         assert_eq!(config.gitlab_token, "");
         assert_eq!(config.gitlab_url, "https://gitlab.chapsvision.in");
+        assert_eq!(config.github_com_token, "");
+    }
+
+    #[test]
+    fn reads_github_com_repositories() {
+        let stored = serde_json::json!({
+            "githubComToken": "ghp_public",
+            "repositories": [
+                { "id": "a", "provider": "githubcom", "owner": "rust-lang", "name": "rust", "label": null }
+            ]
+        });
+
+        let config: Config = serde_json::from_value(stored).expect("config must parse");
+
+        assert_eq!(config.github_com_token, "ghp_public");
+        assert_eq!(config.repositories[0].provider, Provider::GithubCom);
     }
 
     #[test]
