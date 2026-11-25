@@ -2,7 +2,7 @@ import { useState } from "react";
 import { GitPullRequest, GitMerge, Clock, ChevronRight, Copy, Check, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Provider, PullRequest, ReviewDecision, Reviewer } from "../types";
-import { prPrefix, timeAgo } from "../types";
+import { prPrefix, prTerm, timeAgo } from "../types";
 
 interface Props {
   pr: PullRequest;
@@ -103,6 +103,7 @@ function labelColor(hex: string) {
 
 export function PRCard({ pr, provider = "github" }: Props) {
   const [copied, setCopied] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
 
   async function openPR() {
     await invoke("open_url", { url: pr.url });
@@ -114,6 +115,18 @@ export function PRCard({ pr, provider = "github" }: Props) {
       await navigator.clipboard.writeText(pr.headRefName);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
+  async function copyUrl(e: React.MouseEvent) {
+    // The whole card is clickable: do not also open the PR.
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(pr.url);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 1500);
     } catch {
       /* clipboard unavailable */
     }
@@ -138,6 +151,18 @@ export function PRCard({ pr, provider = "github" }: Props) {
               <span className="text-sm font-medium text-[var(--c-text)] group-hover:text-[var(--c-accent)] transition-colors truncate">
                 {pr.title}
               </span>
+              <button
+                type="button"
+                onClick={copyUrl}
+                title={urlCopied ? "Copied!" : `Copy ${prTerm(provider)} URL`}
+                className="shrink-0 inline-flex items-center rounded px-1 py-0.5 hover:bg-[var(--c-bg-inset)] transition-colors"
+              >
+                {urlCopied ? (
+                  <Check size={12} className="text-[var(--c-green)]" />
+                ) : (
+                  <Copy size={12} className="opacity-0 group-hover:opacity-60 text-[var(--c-text-muted)]" />
+                )}
+              </button>
             </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <div className="flex items-center gap-1">
