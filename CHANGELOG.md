@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.19](https://github.com/hebus/komitt/compare/v0.1.18...v0.1.19) (2026-11-26)
+
+
+### Features
+
+* select several PRs/MRs and copy their links for Slack ([e3532ac](https://github.com/hebus/komitt/commit/e3532ac1c7e7ee6207ad94958c7b8a68f36f2cda))
+* select several PRs/MRs and copy their links for Slack ([8421095](https://github.com/hebus/komitt/commit/8421095b73a4f62ff1c8cfcd1531ee2197f88c6e))
+
 ## [0.1.18](https://github.com/hebus/komitt/compare/v0.1.17...v0.1.18) (2026-11-25)
 
 
