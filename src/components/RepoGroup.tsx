@@ -38,8 +38,12 @@ import type { RepositoryConfig, PullRequest, FilterStatus } from "../types";
 import { branchKind, compareBranches, matchesFilter, prTerm, providerLabel, repoWebUrl, timeAgo } from "../types";
 import { PRCard } from "./PRCard";
 import { ProviderIcon } from "./ProviderIcon";
+import type { SelectedPR } from "../lib/slack";
 
 interface Props {
+  /** URLs of the selected PRs/MRs, and the toggle handler. */
+  selectedUrls: Set<string>;
+  onToggleSelect: (item: SelectedPR) => void;
   repo: RepositoryConfig;
   prs: PullRequest[];
   error: string | null;
@@ -52,6 +56,8 @@ interface Props {
 }
 
 export function RepoGroup({
+  selectedUrls,
+  onToggleSelect,
   repo,
   prs,
   error,
@@ -88,6 +94,18 @@ export function RepoGroup({
   const repoLabel     = repo.label ?? `${repo.owner}/${repo.name}`;
   const term          = prTerm(repo.provider);
   const providerName  = providerLabel(repo.provider);
+
+  function renderCard(pr: PullRequest) {
+    return (
+      <PRCard
+        key={pr.number}
+        pr={pr}
+        provider={repo.provider}
+        selected={selectedUrls.has(pr.url)}
+        onToggleSelect={() => onToggleSelect({ pr, provider: repo.provider, repo: repoLabel })}
+      />
+    );
+  }
 
   function branchBadgeClass(branch: string) {
     const kind = branchKind(branch);
@@ -190,9 +208,7 @@ export function RepoGroup({
             </div>
           ) : branchEntries.length <= 1 ? (
             <div className="flex flex-col gap-2">
-              {filtered.map((pr) => (
-                <PRCard key={pr.number} pr={pr} provider={repo.provider} />
-              ))}
+              {filtered.map(renderCard)}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -206,9 +222,7 @@ export function RepoGroup({
                     <span className="text-[11px] text-[var(--c-text-subtle)]">· {bPrs.length}</span>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {bPrs.map((pr) => (
-                      <PRCard key={pr.number} pr={pr} provider={repo.provider} />
-                    ))}
+                    {bPrs.map(renderCard)}
                   </div>
                 </div>
               ))}

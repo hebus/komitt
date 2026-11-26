@@ -7,6 +7,8 @@ import { isUpmerge, prPrefix, prTerm, timeAgo } from "../types";
 interface Props {
   pr: PullRequest;
   provider?: Provider;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 function reviewBadge(decision: ReviewDecision, isDraft: boolean) {
@@ -112,7 +114,7 @@ function labelColor(hex: string) {
   };
 }
 
-export function PRCard({ pr, provider = "github" }: Props) {
+export function PRCard({ pr, provider = "github", selected = false, onToggleSelect }: Props) {
   const [copied, setCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
 
@@ -153,11 +155,22 @@ export function PRCard({ pr, provider = "github" }: Props) {
 
   return (
     <div
-      className={`${bgClass} border border-[var(--c-border)] ${borderClass} rounded-lg p-3 transition cursor-pointer group${pr.isDraft ? " opacity-50 hover:opacity-100" : ""}`}
+      className={`${bgClass} border border-[var(--c-border)] ${borderClass} rounded-lg p-3 transition cursor-pointer group${pr.isDraft ? " opacity-50 hover:opacity-100" : ""}${selected ? " ring-2 ring-[var(--c-accent)]" : ""}`}
       onClick={openPR}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 min-w-0">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggleSelect}
+              // The whole card is clickable: do not also open the PR.
+              onClick={(e) => e.stopPropagation()}
+              title={selected ? "Deselect" : "Select"}
+              className="mt-0.5 shrink-0 cursor-pointer accent-[var(--c-accent)]"
+            />
+          )}
           <GitPullRequest size={16} className="mt-0.5 shrink-0 text-[var(--c-accent)]" />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

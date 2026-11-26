@@ -34,14 +34,18 @@ pr-dashboard/
 │   │   ├── usePRData.ts          # Polling GitHub + émission d'événements PREvent
 │   │   ├── useToast.ts           # Gestion de la queue de toasts (state + auto-dismiss 5s)
 │   │   ├── useNotifications.ts   # Historique persistant des notifications (markRead, remove…)
-│   │   └── useUpdater.ts         # Vérification des mises à jour (GitHub Releases) + installation
+│   │   ├── useUpdater.ts         # Vérification des mises à jour (GitHub Releases) + installation
+│   │   └── useSelection.ts       # Sélection multiple de PR/MR (Map clé = pr.url : toggle, clear, prune)
+│   ├── lib/
+│   │   └── slack.ts              # SelectedPR + formatClipboardHtml / formatClipboardText (copie pour Slack)
 │   ├── components/
 │   │   ├── ErrorBoundary.tsx     # Capture les erreurs React
 │   │   ├── UpdateBanner.tsx      # Bannière « nouvelle version disponible » (installer / plus tard)
 │   │   ├── FilterBar.tsx         # Barre recherche + toggle All/Pending/Approved/Mergeable
 │   │   ├── ProviderIcon.tsx      # Logos GitHub / GitLab en SVG inline (lucide n'a plus d'icônes de marque)
 │   │   ├── RepoGroup.tsx         # Groupe collapsible par repository (avec squelettes au premier chargement)
-│   │   ├── PRCard.tsx            # Carte d'une PR/MR (nom de branche cliquable → copie clipboard)
+│   │   ├── PRCard.tsx            # Carte d'une PR/MR (case de sélection, nom de branche cliquable → copie clipboard)
+│   │   ├── SelectionBar.tsx      # Barre d'actions de la sélection : copier pour Slack / effacer
 │   │   ├── ToastContainer.tsx    # Toasts in-app (slide-in, barre de progression, cliquables)
 │   │   ├── NotificationPanel.tsx # Panneau dropdown historique des notifications (icône cloche dans le header)
 │   │   └── Settings.tsx          # Modal de configuration (sources GitHub/GitLab, repos, intervalle, test notification)
@@ -324,6 +328,16 @@ Quand un repo a des PR ouvertes sur plusieurs branches cibles (`baseRefName`) di
 | Carte (zone générale) | Clic | Ouvre la PR dans le navigateur (`invoke("open_url")`) |
 | Nom de la branche source (`headRefName`) | Clic | Copie le nom de branche dans le presse-papiers via `navigator.clipboard.writeText` |
 | Icône `Copy` à droite du titre | Clic | Copie l'URL de la PR/MR (`pr.url`) ; état local `urlCopied` distinct de `copied` |
+| Case à cocher (à gauche) | Clic | Ajoute/retire la PR/MR de la sélection (`stopPropagation` : n'ouvre pas la PR) ; la carte sélectionnée a un anneau `ring-2` |
+
+### Sélection multiple et copie pour Slack
+
+- **État** : `useSelection` (dans `App.tsx`) garde une `Map<pr.url, SelectedPR>`. La clé est l'URL, car les numéros de PR se répètent d'un repo à l'autre. `RepoGroup` reçoit `selectedUrls` + `onToggleSelect` et construit le `SelectedPR` (`pr`, `provider`, nom du repo).
+- **Nettoyage** : un `useEffect` d'`App` appelle `prune()` pour retirer les PR/MR qui ont disparu des données (mergées, fermées). Il est ignoré tant qu'une query n'a pas de données, pour ne pas vider la sélection pendant un refetch.
+- **`SelectionBar`** : affichée sous la liste dès qu'il y a une sélection (compteur, *Copy for Slack*, effacer la sélection).
+  - *Copy for Slack* : `navigator.clipboard.write` avec un `ClipboardItem` `text/html` (`formatClipboardHtml` : `<ul><li><a href>…`) + `text/plain` (`formatClipboardText`). Collé dans Slack, les liens sont cliquables. Repli sur `writeText` du texte brut si l'écriture riche échoue. Le retour (« Copied » / erreur) est un texte temporaire de 3 s dans la barre, sans passer par `useToast` (réservé aux `PREvent`).
+- **Format** : une ligne par PR/MR, `!123 titre — repo (auteur)` (`#123` sur GitHub) ; `&`, `<`, `>` et `"` sont échappés dans le HTML. La syntaxe mrkdwn `<url|texte>` n'est pas utilisée : la zone de saisie de Slack ne l'interprète pas.
+- **Pas d'envoi direct** : il n'y a pas d'intégration à l'API Slack (webhook ou token), le message est collé à la main. « Envoyer vers » de Windows ne gère que des fichiers, et Slack Desktop n'est pas une cible du Share UI WinRT.
 
 Le nom de branche est rendu comme un `<button>` :
 - `e.stopPropagation()` empêche le clic d'ouvrir aussi la PR.
