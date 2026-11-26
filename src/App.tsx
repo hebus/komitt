@@ -17,6 +17,8 @@ import { usePRData } from "./hooks/usePRData";
 import { useToast } from "./hooks/useToast";
 import { useNotifications } from "./hooks/useNotifications";
 import { useUpdater } from "./hooks/useUpdater";
+import { useSelection } from "./hooks/useSelection";
+import { SelectionBar } from "./components/SelectionBar";
 import { FilterBar } from "./components/FilterBar";
 import { RepoGroup } from "./components/RepoGroup";
 import { Settings } from "./components/Settings";
@@ -114,6 +116,19 @@ export default function App() {
       totalConflicts: conflicts,
     };
   }, [queries]);
+
+  const { selected, toggle: toggleSelect, clear: clearSelection, prune } = useSelection();
+  const selectedUrls = useMemo(() => new Set(selected.keys()), [selected]);
+  const selectedItems = useMemo(() => Array.from(selected.values()), [selected]);
+
+  // A selected PR that disappears from the data (merged, closed) is dropped.
+  // Skipped while any query has no data yet, so a refetch never clears the selection.
+  useEffect(() => {
+    if (queries.some((q) => !q.data)) return;
+    const live = new Set<string>();
+    queries.forEach((q) => q.data?.prs.forEach((pr) => live.add(pr.url)));
+    prune(live);
+  }, [queries, prune]);
 
   function refreshAll() {
     queryClient.invalidateQueries({ queryKey: ["prs"] });
@@ -259,6 +274,8 @@ export default function App() {
                 return (
                   <RepoGroup
                     key={repo.id}
+                    selectedUrls={selectedUrls}
+                    onToggleSelect={toggleSelect}
                     repo={repo}
                     prs={query?.data?.prs ?? []}
                     error={query?.data?.error ?? (query?.error ? String(query.error) : null)}
@@ -273,6 +290,9 @@ export default function App() {
               })}
             </div>
           </main>
+          {selectedItems.length > 0 && (
+            <SelectionBar items={selectedItems} onClear={clearSelection} />
+          )}
         </>
       )}
 
